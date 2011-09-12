@@ -18,23 +18,27 @@ class DoubleIntegrator( NoisyDtLTISystem ):
         
 if __name__ == '__main__':
     
-    Ts = 5e-3
+    Ts = 1.0 / 400
     
-    Sv = np.matrix( [[4]] )
+    Sv = np.matrix( [[0.001]] )
     Sw = 100 * np.matrix( [[0.25*Ts**4, 0.5*Ts**3],[0.5*Ts**3, Ts**2]] )
     
     # define system
-    di = DoubleIntegrator( Ts=Ts, Sw=Sw, Sv=Sv, x0 = np.matrix( [[10.0],[0.0]] ) )
+    di = DoubleIntegrator( Ts=Ts, Sw=Sw, Sv=Sv, x0 = np.matrix( [[10.0],[5.0]] ) )
     
     # define controller
     #nl_controller = NonLinearController( K = 50, alpha=0.5 )
-    controller = LQController( di, Q=100*np.eye(2), R=1*np.eye(1)) 
+    controller = LQController( di, Q=10*np.eye(2), R=1*np.eye(1)) 
         
     # create simulator
     sim = SimEnv( di, controller )
     
+    def saturation( u ):
+        return np.clip(u, -3, 3)
+    
     # run
-    res = sim.simulate( 8 )
+    res = sim.simulate( 15, saturation )
+    print res.t.shape
         
     # plot results
     from pylab import *

@@ -20,9 +20,9 @@ class SimEnv( object ):
         # the controller ( state feedback )
         self.controller = controller
         
-        self.kalman_filter = KalmanFilter( system, system._x_old )
+        self.kalman_filter = KalmanFilter( system  )
     
-    def simulate( self, Tsim ):
+    def simulate( self, Tsim, u_func=None ):
         """Simulate controlled system dynamics."""
         
         # run for sufficient steps
@@ -39,7 +39,7 @@ class SimEnv( object ):
         y = np.zeros( (self.system.n_outputs, n_steps) )
         
         # set initial condition
-        xhat[:,0] = self.system._x_old.ravel()
+        xhat[:,0] = self.kalman_filter._xhat.ravel()
         
         # run simulation
         for k in xrange( n_steps-1 ):
@@ -48,17 +48,20 @@ class SimEnv( object ):
             # Simulation step
             # if at step k i apply command u[:,k] i will obtain at 
             # step k+1 the output y[:,k+1]
-            y[:,k+1] = self.system.sim( u[:,k] )
+            y[:,k+1] = self.system.simulate( u[:,k] )
             
             # now i am at step step k+1
             # estimate state using kalman filter using output at current 
             # step and previous control input value
-            xhat[:,k+1] = self.kalman_filter.estimate( y[:,k+1], u[:,k] )
+            xhat[:,k+1] = self.kalman_filter.estimate( y[:,k+1], u[:,k] ).ravel()
         
             # compute control move for next step, at next iteration, based
-            # on the state at this time 
-            u[:,k+1] = self.controller.compute_control_input( xhat[:,k].reshape(self.system.n_states,1) )
-            
+            # on the state at this time. Futhermore apply some function 
+            # to the output
+            if u_func:
+                u[:,k+1] = u_func( self.controller.compute_control_input( xhat[:,k].reshape(self.system.n_states,1) ) )
+            else:
+                u[:,k+1] = self.controller.compute_control_input( xhat[:,k].reshape(self.system.n_states,1))
             
         return SimulationResults(xhat, u, y, self.system.Ts)
 

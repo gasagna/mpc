@@ -1,0 +1,4 @@
++ Implement low-pass input signal filtering, because of the limited bandwidth of the actuator.
++ Add low-pass filtering to SimEnv.simulate method inside the for loop, so that at each iteration
+  we do not apply the calculated command but the filtered version.
++ Implement saturation of input. DONE
