@@ -39,7 +39,7 @@ class SimEnv( object ):
         y = np.zeros( (self.system.n_outputs, n_steps) )
         
         # set initial condition
-        xhat[:,0] = self.system._x_old[:,0]
+        xhat[:,0] = self.system._x_old.ravel()
         
         # run simulation
         for k in xrange( n_steps-1 ):
@@ -48,12 +48,12 @@ class SimEnv( object ):
             # Simulation step
             # if at step k i apply command u[:,k] i will obtain at 
             # step k+1 the output y[:,k+1]
-            y[:,k+1] = self.system.sim( u[:,k] )[:,0]
+            y[:,k+1] = self.system.sim( u[:,k] )
             
             # now i am at step step k+1
             # estimate state using kalman filter using output at current 
             # step and previous control input value
-            xhat[:,k+1] = self.kalman_filter.estimate( y[:,k+1], u[:,k] ).ravel()
+            xhat[:,k+1] = self.kalman_filter.estimate( y[:,k+1], u[:,k] )
         
             # compute control move for next step, at next iteration, based
             # on the state at this time 

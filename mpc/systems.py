@@ -105,8 +105,19 @@ class DtLTISystem( object ):
         
         self.Ts = Ts
         
-    def __repr__ ( self ):
-        return "A\n%s\nB\n%s\nC\n%s\nD\n%s\n" %  tuple(map( repr, [self.A, self.B, self.C, self.D] ))
+    def sim( self, u ):
+        """Simulate system and get back noisy measurements of the outputs."""
+        
+        # compute new state vector
+        x_new = self.A * self._x_old + self.B * u 
+        
+        # get measurements of the system
+        y = self.C * x_new 
+        
+        # update attribute for the next call
+        self._x_old = x_new
+        
+        return y.reshape( self.n_outputs, 1 )
 
 
 class NoisyDtLTISystem( DtLTISystem ):
@@ -122,7 +133,10 @@ class NoisyDtLTISystem( DtLTISystem ):
         self.Sv = Sv
         
         # set initial condition of the system
-        self._x_old = x0
+        self._x_old = np.matrix( x0 ) 
+        
+        if not self._x_old.shape == ( self.n_states, 1):
+            raise LTISystemError('wring shape of initial state vector')
         
     def sim( self, u ):
         """Simulate system and get back noisy measurements of the outputs."""
@@ -136,7 +150,7 @@ class NoisyDtLTISystem( DtLTISystem ):
         # update attribute for the next call
         self._x_old = x_new
         
-        return y
+        return y.reshape( self.n_outputs, 1 )
 
 
 class KalmanFilter( object ):
@@ -177,7 +191,7 @@ class KalmanFilter( object ):
         self._xhat_old = xhat
         
         # return state estimate
-        return xhat
+        return xhat.reshape( self.system.n_states, 1)
 
 
 def c2d( system, Ts, method='euler-forward' ):

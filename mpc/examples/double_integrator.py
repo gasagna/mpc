@@ -24,7 +24,7 @@ if __name__ == '__main__':
     Sw = 100 * np.matrix( [[0.25*Ts**4, 0.5*Ts**3],[0.5*Ts**3, Ts**2]] )
     
     # define system
-    di = DoubleIntegrator( Ts=Ts, Sw=Sw, Sv=Sv, x0 = np.array( [[10.0],[0.0]] ) )
+    di = DoubleIntegrator( Ts=Ts, Sw=Sw, Sv=Sv, x0 = np.matrix( [[10.0],[0.0]] ) )
     
     # define controller
     #nl_controller = NonLinearController( K = 50, alpha=0.5 )
@@ -35,7 +35,6 @@ if __name__ == '__main__':
     
     # run
     res = sim.simulate( 8 )
-        
         
     # plot results
     from pylab import *
