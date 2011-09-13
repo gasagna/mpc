@@ -19,6 +19,9 @@ Furthermore two additional dependencies are needed, which luckily are ``easy_ins
 * `pydare <missing-link!>`_
 * `slycot <https://github.com/avventi/Slycot/>`_
 
+
+As of now mpc is under development but the master branch on `GitHub <https://github.com/gasagna/mpc/>`_ should be working. Soon, a stable release will be made available.
+
 Examples of usage
 =================
 There are some examples in the mpc/examples folder which may be helpful to get started.
