@@ -1,0 +1,50 @@
+General information
+===================
+mpc is a pure Python module for the simulation of discrete-time  linear time-invariant dynamic systems which can be controlled by a model predictive controller (MPC) or an infinite horizon linear-quadratic controller (LQ). 
+
+The project was started from code initially written "to scratch an itch", obviously withouth the aim of being a valid alternative to available control software (Matlab).
+Infact, mpc was primarily created to be a research tool. So, don't expect too much!
+
+Installation and requirements
+=============================
+mpc is built on top of high quality software such as:
+* `python <http://python.org/>`_
+* `scipy <http://numpy.scipy.org/>`_
+* `numpy <http://www.scipy.org/>`_
+
+I am not aware of which versions of the above is at least required to make mpc work, but you should probably get good results with `python => 2.6`, `scipy => 0.8`, `numpy => 1.5`.
+
+Furthermore two additional dependencies are needed, which luckily are ``easy_install``-able. These are:
+
+* `pydare <missing-link!>`_
+* `slycot <https://github.com/avventi/Slycot/>`_
+
+Examples of usage
+=================
+There are some examples in the mpc/examples folder which may be helpful to get started.
+
+Bug reporting and support
+=========================
+The code is hosted at `GitHub <https://github.com/gasagna/mpc/>`_ where you can open a new issue
+if you find a bug.
+
+
+Copyright
+=========
+
+Copyright (C) 2011 Davide Lasagna <davide.lasagna@polito.it>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+A full version of the license terms is available in LICENSE.
