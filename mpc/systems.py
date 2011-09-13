@@ -15,6 +15,17 @@ class LTISystemError( Exception ):
     pass
 
 
+class DtNLSystem( object ):
+    """In this class i will implement a non-lineardiscrete-time,
+    time-invariant system. 
+    
+    The idea is to instantiate from this class by giving as argument a 
+    non linear function which is stored internally and which is fed at 
+    each sampling time with the input vector. Then the function is 
+    evaluated and the outputs are returned. TODO.
+    """
+    pass
+
 class DtLTISystem( object ):
     def __init__ ( self, A, B, C, D, Ts, x0 ):
         """A class for linear time-invariant discrrete time systems.
