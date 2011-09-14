@@ -5,6 +5,8 @@ __date__ = '26/07/2011'
 
 
 import numpy as np
+from scipy.linalg import block_diag
+
 import pydare as dare
 
 __all__ = ['Controller', 'LQController']
@@ -109,3 +111,62 @@ class LQController( Controller ):
         """
         
         return - np.dot( self.K, x)
+
+
+class MPController( Controller ):
+    """The following linear, discrete-time. time invariant model is used
+    ..math::
+        x(k+1) = A x(k) + B u(k)
+        y(k) = C x(k)
+        
+    we want to design a predictive controller in order to obtain the 
+    system state regulation to the oigin in the presence of:
+    * input saturation constraints,
+    * linear state constarints.
+    
+    For the control problem considered it can be shown that the MPC 
+    controller is obtained by solving a Quadratic Programme (QP) problem
+    at each sampling time. 
+    
+    The control objectives can be taken into account through the 
+    following cost function.
+    
+    
+    Consider the following quadratic cost function:
+    
+    ..math:: 
+        J(x(k|k), U(k)) = \sum_{i=0}^{H_p-1} ||x(k+1|k)||^{2}_Q + ||u(k+1|K)||^{2}_R
+        
+    with:
+    
+    ..math::
+        U(k) = [u(k|k) u(k+1|k) ... u(k+Hc-1|k)]^T
+        
+    and 
+    ..math::
+        H_p=H_c; \, Q=Q^T>=0; \, R=R^T>=0
+        
+    """
+    def __init__ ( self, system, Q, R, Hp, Hc ):
+
+        
+        Ac = np.vstack( [system.A**i for i in range(1, Hp+1)] ) 
+        
+        rows = []
+        for i in range(Hc):
+            row = np.hstack( [ (system.A**(i-j) )*system.B if j<=i else np.zeros_like(system.B) for j in range(Hc)]  )
+            rows.append(row)
+            
+        Bc = np.vstack(rows)
+        
+        Qc = block_diag( *(Q for i in range(Hp)) )
+        Rc = block_diag( *(R for i in range(Hp)) )
+        
+        H = 2*( Bc.T*Qc*Bc + Rc )
+        F = 2*Bc.T*Qc*Ac
+        
+        self.K = np.linalg.inv(H) * F
+        
+        
+    def compute_control_input( self, x ):
+        return - np.dot( self.K[0],  x)
