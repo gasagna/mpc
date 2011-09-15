@@ -10,24 +10,106 @@ import scipy
 import scipy.linalg
 
 
-class LTISystemError( Exception ):
+class DtSystemError( Exception ):
     """Basic exception raised when wrong state-space matrices are given"""
     pass
 
 
-class DtNLSystem( object ):
-    """In this class i will implement a non-lineardiscrete-time,
-    time-invariant system. 
+class DtSystem( object )
+    """Base class of all the  discrete time systems in this module. Use 
+    derived classes to work, cause this is just the skeleton of the structure."""
+    def __init__ ( self, n_states, n_inputs, n_outputs, Ts, x0 ):
+        # number of states
+        self.n_states = n_states
+        
+        # number of inputs
+        self.n_inputs = n_inputs
+        
+        # number of outputs
+        self.n_outputs = n_outputs
+        
+        # sampling time
+        self.Ts = Ts
+        
+        # check initial condition
+        if not x0.shape == ( self.n_states, 1):
+            raise DtSystemError('wring shape of initial state vector')
+            
+        self.x = np.matrix(x0)
     
-    The idea is to instantiate from this class by giving as argument a 
-    non linear function which is stored internally and which is fed at 
-    each sampling time with the input vector. Then the function is 
-    evaluated and the outputs are returned. TODO.
-    """
-    pass
+    def simulate( self, u ):
+        """Simulate open-loop system dynamics and get back measurements of the outputs.
+        
+        Parameters
+        ----------
+        u : np.matrix object
+            the argument ``u`` can be a a single input or a sequence of inputs.
+            In the first case ``u`` must have shape equal to ``(n_inputs, 1)``, 
+            while in the former it can have a shape equal to ``(n_inputs, n_steps)``,
+            where ``n_steps`` indicate the number of steps of the simulation.
+        
+        Returns
+        -------
+        y : np.matrix object
+            the output value
+        """
+        
+        # initialize outputs array. Each column is the output at time k.
+        y = np.zeros( (self.n_outputs, u.shape[1] ) )
+        
+        # for each time step 
+        for i in range(u.shape[1]):
+            
+            # compute new state vector
+            self.x = self._apply_input( u[:,i] )
+        
+            # get measurements of the system. (but this is already at time k+1: i is an index over array indices )
+            y[:,i] = self.measure_outputs()
+        
+        return y
+        
+    def measure_outputs( self ):
+        """Get available outputs, computed from system state.
+        
+        Derived classe can overload this method for doing
+        custom things, such as adding noise, or using non linear
+        stuff.
+        
+        """
+        raise NotImplementedError('Use derived classes instead')
+    
+    def _apply_input( self, u ) :
+        """Apply single input control and update system state.
+        
+        The reason for the existance of this method is that derived 
+        classes can override this method as they want, for example by 
+        adding some process noise.
+        """
+        raise NotImplementedError('Use derived classes instead')
 
 
-class DtLTISystem( object ):
+class DtNLSystem( DtSystem ):
+    """Base class for non-linear time-invariant discrete-time systems."""
+    def __init__ ( self, f, g, n_states, n_inputs, n_outputs, Ts, x0):
+        """ """
+        # state equation function
+        self.f = f
+        
+        # outputs equation function
+        self.g = g
+        
+        System.__init__ ( self, Ts, x0 )
+        
+    def measure_outputs( self ):
+        """Get available outputs, computed from system state."""
+        return self.g( self.x )
+    
+    def _apply_input( self, u ) :
+        """Apply single input control and update system state."""
+        return self.f( self.x, u )
+
+
+class DtLTISystem( DtSystem ):
     def __init__ ( self, A, B, C, D, Ts, x0 ):
         """A class for linear time-invariant discrrete time systems.
         
@@ -108,51 +190,31 @@ class DtLTISystem( object ):
             
         if not self.D.shape[0] == self.C.shape[0]:
             raise LTISystemError('matrix d must be have the same number of rows as matrix C')
+
+        # call parent __init__
+        DtSystem.__init__( self, n_outputs = self.C.shape[0],
+                                 n_states = self.A.shape[0],
+                                 n_inputs = self.B.shape[1]
+                                 Ts = Ts,
+                                 x0 = x0  )
+
+    def measure_outputs( self ):
+        """Get available outputs.
         
-        # number of states
-        self.n_states = self.A.shape[0]
+        Derived classe can overload this method for doing
+        custom things, such as adding noise.
         
-        # number of inputs
-        self.n_inputs = self.B.shape[1]
-        
-        # number of outputs
-        self.n_outputs = self.C.shape[0]
-        
-        # sampling time
-        self.Ts = Ts
-        
-        # set initial condition
-        self.x = np.matrix( x0 ) 
-        
-        if not self.x.shape == ( self.n_states, 1):
-            raise LTISystemError('wring shape of initial state vector')
-        
-    def simulate( self, u ):
-        """Simulate system and get back measurements.
-        
-        Parameters
-        ----------
-        u : np.matrix object
-            the control input
-        
-        Returns
-        -------
-        y : np.matrix object
-            the output value
         """
+        return self.C * self.x 
+    
+    def _apply_input( self, u ) :
+        """Apply single input control.
         
-        # compute new state vector
-        y = np.zeros( (self.n_outputs, u.shape[1]+1 ) )
-        
-        # for each time step 
-        for i in range(u.shape[1]):
-            # compute new state vector
-            self.x = self.A * self.x + self.B * u[:,i] 
-        
-            # get measurements of the system
-            y[:,i+1] = self.C * self.x 
-        
-        return y
+        The reason for the existance of this method is that derived 
+        classes can override this method as they want, for example by 
+        adding some process noise .
+        """
+        return self.A * self.x + self.B * u 
 
 
 class NoisyDtLTISystem( DtLTISystem ):
@@ -228,42 +290,42 @@ class NoisyDtLTISystem( DtLTISystem ):
         ------
         LTISystemError : if system matrices do not have the correct shape
         """
-        # create the LTI system definition
-        DtLTISystem.__init__( self, A, B, C, D, Ts, x0  )
-        
-        # set process and measurement noise
+        # set process and measurement noise covariance matrices
         self.Sw = Sw
         self.Sv = Sv
         
-    def simulate( self, u ):
-        """Simulate system and get back noisy measurements of the outputs.
+        # call parent __init__
+        DtLTISystem.__init__( self, A, B, C, D, Ts, x0 )
         
-        Parameters
-        ----------
-        u : np.matrix object
-            the control input at time ``k``. Must have shape equal to ``(n_inputs, 1)
-        
-        Returns
-        -------
-        y : np.matrix object
-            the output value
+    def _measurement_noise( self ):
+        """Get some noise."""
+        return np.matrix( np.random.multivariate_normal( np.zeros((self.n_outputs,)), self.Sv, 1 ).reshape( self.n_outputs, 1) )
+    
+    def _process_noise( self ):
+        """Get some noise."""
+        return np.matrix( np.random.multivariate_normal( np.zeros((self.n_states,)), self.Sw, 1 ).reshape(self.n_states,1) )
+               
+    def measure_outputs( self ):
         """
+        """
+        return self.C * self.x + self._measurement_noise()
+    
+    def _apply_input( self, u ):
+        """
+        """
+        return self.A * self.x + self.B * u + self._process_noise()
+
+
+class DoubleIntegrator( NoisyDtLTISystem ):
+    def __init__ ( self, Ts, Sw, Sv, x0 ):
         
-        # create state array. Each column is the state at time k.
-        # we want plus because initial state is already known
-        y = np.zeros( (self.n_outputs, u.shape[1]+1 ) )
-        y[:,0] = self.C * self.x + np.matrix( np.random.multivariate_normal( np.zeros((self.n_outputs,)), self.Sv, 1 ).reshape( self.n_outputs, 1) )
+        # state space matrices
+        A = [[1, Ts], [0, 1]]
+        B = [[Ts**2/2], [Ts]]
+        C = [[1, 0]]
+        D = [[0]]
         
-        
-        # for each time step 
-        for i in range(u.shape[1]):
-            # compute new state vector
-            self.x = self.A * self.x + self.B * u[:,i] + np.matrix( np.random.multivariate_normal( np.zeros((self.n_states,)), self.Sw, 1 ).reshape(self.n_states,1) )
-        
-            # get measurements of the system
-            y[:,i+1] = self.C * self.x + np.matrix( np.random.multivariate_normal( np.zeros((self.n_outputs,)), self.Sv, 1 ).reshape( self.n_outputs, 1) )
-        
-        return y
+        NoisyDtLTISystem.__init__( self, A, B, C, D, Ts, Sw, Sv, x0 )
 
 
 class KalmanFilter( object ):
@@ -309,17 +371,6 @@ class KalmanFilter( object ):
         # return state estimate
         return xhat
 
-
-class DoubleIntegrator( NoisyDtLTISystem ):
-    def __init__ ( self, Ts, Sw, Sv, x0 ):
-        
-        # state space matrices
-        A = [[1, Ts], [0, 1]]
-        B = [[Ts**2/2], [Ts]]
-        C = [[1, 0]]
-        D = [[0]]
-        
-        NoisyDtLTISystem.__init__( self, A, B, C, D, Ts, Sw, Sv, x0 )
 
 def c2d( system, Ts, method='euler-forward' ):
     """Convert continuous-time model to discrete time, 
