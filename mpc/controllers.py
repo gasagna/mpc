@@ -9,7 +9,7 @@ from scipy.linalg import block_diag
 
 import pydare as dare
 
-__all__ = ['Controller', 'LQController']
+__all__ = ['Controller', 'LQController', 'MPController']
 
 
 class Controller( object ):
