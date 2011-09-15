@@ -26,6 +26,7 @@ class DtNLSystem( object ):
     """
     pass
 
+
 class DtLTISystem( object ):
     def __init__ ( self, A, B, C, D, Ts, x0 ):
         """A class for linear time-invariant discrrete time systems.
@@ -121,9 +122,9 @@ class DtLTISystem( object ):
         self.Ts = Ts
         
         # set initial condition
-        self._x = np.matrix( x0 ) 
+        self.x = np.matrix( x0 ) 
         
-        if not self._x.shape == ( self.n_states, 1):
+        if not self.x.shape == ( self.n_states, 1):
             raise LTISystemError('wring shape of initial state vector')
         
     def simulate( self, u ):
@@ -141,15 +142,17 @@ class DtLTISystem( object ):
         """
         
         # compute new state vector
-        x_new = self.A * self._x + self.B * u 
+        y = np.zeros( (self.n_outputs, u.shape[1]+1 ) )
         
-        # get measurements of the system
-        y = self.C * x_new 
+        # for each time step 
+        for i in range(u.shape[1]):
+            # compute new state vector
+            self.x = self.A * self.x + self.B * u[:,i] 
         
-        # update attribute for the next call
-        self._x = x_new
+            # get measurements of the system
+            y[:,i+1] = self.C * self.x 
         
-        return y.reshape( self.n_outputs, 1 )
+        return y
 
 
 class NoisyDtLTISystem( DtLTISystem ):
@@ -238,7 +241,7 @@ class NoisyDtLTISystem( DtLTISystem ):
         Parameters
         ----------
         u : np.matrix object
-            the control input
+            the control input at time ``k``. Must have shape equal to ``(n_inputs, 1)
         
         Returns
         -------
@@ -246,14 +249,19 @@ class NoisyDtLTISystem( DtLTISystem ):
             the output value
         """
         
-        # compute new state vector
-        x_new = self.A * self._x + self.B * u + np.matrix( np.random.multivariate_normal( np.zeros((self.n_states,)), self.Sw, 1 ).reshape(self.n_states,1) )
+        # create state array. Each column is the state at time k.
+        # we want plus because initial state is already known
+        y = np.zeros( (self.n_outputs, u.shape[1]+1 ) )
+        y[:,0] = self.C * self.x + np.matrix( np.random.multivariate_normal( np.zeros((self.n_outputs,)), self.Sv, 1 ).reshape( self.n_outputs, 1) )
         
-        # get measurements of the system
-        y = self.C * x_new + np.matrix( np.random.multivariate_normal( np.zeros((self.n_outputs,)), self.Sv, 1 ).reshape( self.n_outputs, 1) )
         
-        # update attribute for the next call
-        self._x = x_new
+        # for each time step 
+        for i in range(u.shape[1]):
+            # compute new state vector
+            self.x = self.A * self.x + self.B * u[:,i] + np.matrix( np.random.multivariate_normal( np.zeros((self.n_states,)), self.Sw, 1 ).reshape(self.n_states,1) )
+        
+            # get measurements of the system
+            y[:,i+1] = self.C * self.x + np.matrix( np.random.multivariate_normal( np.zeros((self.n_outputs,)), self.Sv, 1 ).reshape( self.n_outputs, 1) )
         
         return y
 
@@ -301,6 +309,17 @@ class KalmanFilter( object ):
         # return state estimate
         return xhat
 
+
+class DoubleIntegrator( NoisyDtLTISystem ):
+    def __init__ ( self, Ts, Sw, Sv, x0 ):
+        
+        # state space matrices
+        A = [[1, Ts], [0, 1]]
+        B = [[Ts**2/2], [Ts]]
+        C = [[1, 0]]
+        D = [[0]]
+        
+        NoisyDtLTISystem.__init__( self, A, B, C, D, Ts, Sw, Sv, x0 )
 
 def c2d( system, Ts, method='euler-forward' ):
     """Convert continuous-time model to discrete time, 
