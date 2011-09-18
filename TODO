@@ -1,9 +1,5 @@
 + Implement low-pass input signal filtering, because of the limited bandwidth of the actuator. Furthermore high frequency input signals may break the actuator, causing overshoots and fatigue. Low-pass filtering sould be applied to SimEnv.simulate method inside the for loop, so that at each iteration we do not apply the calculated command but the filtered version. Think at what we to do at the firsts sampling time: maybe apply only a part of the digital filter array?
 
-D Implement saturation of input by adding u_func argument which acts at each sampling time on the control input. 
-
-+ Implement non linear systems class. 
-
 + Add neural-network controller.
 
 + Add system identification tools, like autoregressive exogenus models. e.g. (order = 1): x(k+1) = a*x(k) + b*u(k). So that i can create a linear model from experimental input-output data or make a simulation from a non-linear model.
