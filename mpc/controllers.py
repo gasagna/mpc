@@ -1,69 +1,94 @@
-"""This module provide some controller classes."""
-
 __author__ = 'Davide Lasagna, Politecnico di Torino Dipartimento di Ingegneria Aerospaziale. <davide.lasagna@polito.it>'
 __date__ = '26/07/2011'
+__licence_ = """
+Copyright (C) 2011  Davide Lasagna
 
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
+__doc__ = """This module contains classes representing controllers to be 
+used for controlling linear time invariant systems, such as the 
+Linear-Quadratic controller (LQ) or Model Predictive Controller (MPC).
+
+A controller is a python object which usually has a single public method, 
+``compute_control_input``, which is responsible of returning the 
+appropriate control input, based on the system's state, which is
+given as argument to the method. For consistency all controllers
+inherits for the base class :py:`mpc.controllers.Controller` and you do
+it as well if you want to create your own controller class.
+
+Summary of classes
+==================
+.. currentmodule:: mpc.controllers
+
+.. autosummary::
+   :toctree: generated
+
+    mpc.controllers.Controller
+    mpc.controllers.LQController
+    mpc.controllers.MPCController
+
+"""
 import numpy as np
 from scipy.linalg import block_diag
-
 import pydare as dare
 
-__all__ = ['Controller', 'LQController', 'MPController']
-
-
 class Controller( object ):
-    """A Controller is an object with a single public method, ``compute_control_input``,
-    which is responsible of returning the appropriate control input, based on the
-    system's state, which is given as argument to the method.
-    
-    This is the base class from which all other derived class inherit. You should 
-    use them instead of this one. For consistency, if you want to create your custom 
-    Controller class you may want to inherit from this class.
-    """
+    """Base, dummy controller class. Use derived classes."""
     def compute_control_input( self, x ):
         raise NotImplemented( 'Call derived classes instead.')
 
 
 class LQController( Controller ):
     def __init__ ( self, system, Q, R ):
-        """An Infinite Horizon Linear Quadratic controller (IHLQ).
-        
-        
+        """An Infinite Horizon Linear Quadratic controller (IHLQ) to 
+        regulate to zero the state of the system.
+               
         Consider the following LTI system model:
         
         .. math:: 
-            x(k+1) = Ax(k)+Bu(k)
+            \\mathbf{x}(k+1) = \\mathbf{A}\\mathbf{x}(k) + \\mathbf{B}\\mathbf{u}(k)
         
         and assume that the control objectives can be formulated as 
-        the minization of a quadratic cost function:
+        the minimization of a quadratic cost function:
         
         .. math ::
-            J(x(0), U) = \sum_{i=0}^\infty \big( x(i)^T Q x(i) + u(i)^T R u(i) \big )
+            J(x(0), U) = \sum_{i=0}^\infty \big( \\mathbf{x}(i)^T \\mathbf{Q} \\mathbf{x}(i) + \\mathbf{u}(i)^T \\mathbf{R} \\mathbf{u}(i) \big )
             
-        where :math:`Q>0` and :math:`R>0` are the state and input 
+        where :math:`\\mathbf{Q}>0` and :math:`\\mathbf{R}>0` are the state and input 
         weighting matrices, design parameters of the control problem.
         
         It can be shown that the optimal control input is a static state feedback:
         
         .. math::
-            u^O(k) = - K x(k)
+            \\mathbf{u}^O(k) = - \\mathbf{K} \\mathbf{x}(k)
         
         where:
         
         .. math::
-            K = \big(R+B^TPB)^{-1}B^TPA
+            \\mathbf{K} = \big(\\mathbf{R}+\\mathbf{B}^T\\mathbf{P}\\mathbf{B})^{-1}\\mathbf{B}^T\\mathbf{P}\\mathbf{A}
             
-        and :math:`P>0` is the positive definite solution of the Algebraic 
+        and :math:`\\mathbf{P}>0` is the positive definite solution of the Algebraic 
         Riccati Equation:
         
         .. math::
-            P = A^TPA + Q - A^T PB (R+B^TPB)^{-1} B^TPA
+            \\mathbf{P} = \\mathbf{A}^T\\mathbf{P}\\mathbf{A} + \\mathbf{Q} - \\mathbf{A}^T \\mathbf{P}\\mathbf{B} (\\mathbf{R}+\\mathbf{B}^T\\mathbf{P}\\mathbf{B})^{-1} \\mathbf{B}^T\\mathbf{P}\\mathbf{A}
             
             
         Parameters
         ----------
-        system : an instance of mpc.systems.DtLTISystem, or one of its
+        system : an instance of :py:`mpc.systems.DtLTISystem`, or one of its
                 derived classes. This is the linear system which has 
                 to be controlled.
                 
@@ -74,10 +99,18 @@ class LQController( Controller ):
         R : np.matrix
             the input weigthing matrix. Must be positive definite.
             and with shape ``(n_inputs, n_inputs)``.
+            
+        
+        Attributes
+        ----------
+        K : np.matrix 
+            the state feedback gain matrix
+            
+        Methods
+        -------
+        compute_control_input( x ) : compute optimal control move
         
         """
-        
-        
         # make two local variables
         Ql = np.matrix( Q )
         Rl = np.matrix( R )
@@ -114,13 +147,16 @@ class LQController( Controller ):
 
 
 class MPController( Controller ):
-    """The following linear, discrete-time. time invariant model is used
+    """The following linear, discrete-time. time invariant model is used:
+    
     ..math::
+    
         x(k+1) = A x(k) + B u(k)
         y(k) = C x(k)
         
     we want to design a predictive controller in order to obtain the 
     system state regulation to the oigin in the presence of:
+    
     * input saturation constraints,
     * linear state constarints.
     
@@ -147,26 +183,78 @@ class MPController( Controller ):
         H_p=H_c; \, Q=Q^T>=0; \, R=R^T>=0
         
     """
-    def __init__ ( self, system, Q, R, Hp, Hc ):
+    def __init__ ( self, system, Q, R, Hp, Hw, Hc ):
+        """Design a model predictive controller.
+        
+        Parameters
+        ----------
+        system : an instance of :py:`mpc.systems.DtLTISystem`, or one of its
+                derived classes. This is the linear system which has 
+                to be controlled.
+                
+        Q : np.matrix
+            the state weigthing matrix. Must be positive definite
+            and with shape ``(n_states, n_states)``.
+            
+        R : np.matrix
+            the input weigthing matrix. Must be positive definite.
+            and with shape ``(n_inputs, n_inputs)``.
+        
+        Hp : int
+            the prediction horizon 
+        
+        Hw : int
+            the first sample to be inlcuded in the horizon for the 
+            optimization process
+            
+        Hc : int
+            the control horizon
+            
+        Attributes
+        ----------
+        K : np.matrix 
+            the state feedback gain matrix
+            
+        Methods
+        -------
+        compute_control_input( x ) : compute optimal control move
 
-        
-        Ac = np.vstack( [system.A**i for i in range(1, Hp+1)] ) 
-        
+        """
+
+        Ac = np.vstack( [system.A**i for i in range(Hp)] ) 
+
         rows = []
-        for i in range(Hc):
-            row = np.hstack( [ (system.A**(i-j) )*system.B if j<=i else np.zeros_like(system.B) for j in range(Hc)]  )
+        for i in range(Hp):
+            row = np.hstack( [ (system.A**(i-j-1) )*system.B if j<i else np.zeros_like(system.B) for j in range(Hc)]  )
             rows.append(row)
             
         Bc = np.vstack(rows)
-        
-        Qc = block_diag( *(Q for i in range(Hp)) )
-        Rc = block_diag( *(R for i in range(Hp)) )
-        
+
+        Qc = block_diag( *(np.zeros_like(Q) if i<Hw else Q for i in range(Hp) ) )
+        Rc = block_diag( *(R for i in range(Hc)) )
+
         H = 2*( Bc.T*Qc*Bc + Rc )
-        F = 2*Bc.T*Qc*Ac
-        
-        self.K = np.linalg.inv(H) * F
-        
-        
+        F = 2*Ac.T*Qc*Bc
+
+        self.K = (np.linalg.inv(H) * F.T)[:system.n_inputs]
+
     def compute_control_input( self, x ):
-        return - np.dot( self.K[0],  x)
+        """Conpute control move based on system's state.
+        
+        Parameters
+        ----------
+        x : np.matrix object with shape ``(n_states, 1)``
+            the system's state
+            
+        Returns
+        -------
+        u : np.matrix object with shape ``(n_inputs, 1)``
+            the optimal control move based on controller design
+            
+        Notes
+        -----
+        This method returns only the first element of the optimal input
+        sequence which results from the optimization process, thus 
+        enforcing the receding horizon principle.
+        """    
+        return - np.dot( self.K,  x)

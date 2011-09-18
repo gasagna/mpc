@@ -10,6 +10,10 @@ Contents:
 
 .. toctree::
    :maxdepth: 2
+   
+   src/systems
+   src/controllers
+   src/simulation
 
 Indices and tables
 ==================
