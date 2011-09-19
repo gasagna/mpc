@@ -11,8 +11,8 @@ class DoubleIntegrator( NoisyDtLTISystem ):
         # state space matrices
         A = [[1, Ts], [0, 1]]
         B = [[Ts**2/2], [Ts]]
-        C = [[1, 0]]
-        D = [[0]]
+        C = [[1, 0], [0, 1]]
+        D = [[0], [0]]
         
         NoisyDtLTISystem.__init__( self, A, B, C, D, Ts, Sw, Sv, x0 )
         
@@ -20,24 +20,23 @@ if __name__ == '__main__':
     
     Ts = 1.0 / 400
     
-    Sv = np.matrix( [[0.001]] )
-    Sw = 100 * np.matrix( [[0.25*Ts**4, 0.5*Ts**3],[0.5*Ts**3, Ts**2]] )
+    Sv = np.matrix( [[1, 0], [0, 1]] )
+    Sw = 1 * np.matrix( [[0.25*Ts**4, 0.5*Ts**3],[0.5*Ts**3, Ts**2]] )
     
     # define system
     di = DoubleIntegrator( Ts=Ts, Sw=Sw, Sv=Sv, x0 = np.matrix( [[10.0],[5.0]] ) )
     
     # define controller
-    #nl_controller = NonLinearController( K = 50, alpha=0.5 )
     controller = LQController( di, Q=10*np.eye(2), R=1*np.eye(1)) 
+    
+    # create kalman state observer
+    kalman_observer = KalmanStateObserver( di, x0=np.matrix([[10.0],[5.0]]) )
         
     # create simulator
-    sim = SimEnv( di, controller )
-    
-    def saturation( u ):
-        return np.clip(u, -3, 3)
+    sim = SimEnv( di, controller, observer=kalman_observer )
     
     # run
-    res = sim.simulate( 15, saturation )
+    res = sim.simulate( 15 )
     print res.t.shape
         
     # plot results
