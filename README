@@ -14,11 +14,9 @@ mpc is built on top of high quality software such as:
 
 I am not aware of which versions of the above is at least required to make mpc work, but you should probably get good results with `python => 2.6`, `scipy => 0.8`, `numpy => 1.5`.
 
-Furthermore two additional dependencies are needed, which luckily are ``easy_install``-able. These are:
+Furthermore an additional dependency is required:
 
-* `pydare <missing-link!>`_
-* `slycot <https://github.com/avventi/Slycot/>`_
-
+* `pydare <http://code.google.com/p/pydare/>`_
 
 As of now mpc is under development but the master branch on `GitHub <https://github.com/gasagna/mpc/>`_ should be working. Soon, a stable release will be made available.
 
