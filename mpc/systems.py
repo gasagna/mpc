@@ -104,6 +104,7 @@ class DtSystem( object ):
         self.Ts = Ts
         
         # check initial condition
+        x0 = np.asmatrix(x0)
         if not x0.shape == ( self.n_states, 1):
             raise DtSystemError('wrong shape of initial state vector')
             
@@ -126,7 +127,7 @@ class DtSystem( object ):
             the outputs of the system at each time step of the simulation.
             This matrix has shape ``(n_outputs, n_steps)``, where ``n_steps``
             is the number of columns of the input argument ``u``.
-            The first column of ``y`` is the output vector *after* that 
+            The first column of ``y`` is the output vector *before* that 
             the first element of ``u`` has been applied.
             
         """
@@ -136,13 +137,12 @@ class DtSystem( object ):
         
         # for each time step 
         for i in range(u.shape[1]):
-            
+            # get measurements of the system
+            y[:,i] = self.measure_outputs()
+                    
             # compute new state vector
             self.x = self._apply_input( u[:,i] )
-        
-            # get measurements of the system. (but this is already at time k+1: i is an index over array indices )
-            y[:,i] = self.measure_outputs()
-        
+            
         return y
         
     def measure_outputs( self ):
@@ -151,7 +151,6 @@ class DtSystem( object ):
         Derived classes can overload this method for doing
         custom things, such as adding noise, or using non linear
         stuff.
-        
         """
         raise NotImplementedError('Use derived classes instead')
     
@@ -163,6 +162,7 @@ class DtSystem( object ):
         adding some process noise.
         """
         raise NotImplementedError('Use derived classes instead')
+
 
 class DtNLSystem( DtSystem ):
     def __init__ ( self, f, g, n_states, n_inputs, n_outputs, Ts, x0):
@@ -343,16 +343,16 @@ class DtLTISystem( DtSystem ):
         
         # checks
         if not self.A.shape[0] == self.A.shape[1]:
-            raise LTISystemError('matrix A must be square')
+            raise DtSystemError('matrix A must be square')
         
         if not self.B.shape[0] == self.A.shape[0]:
-            raise LTISystemError('matrix B must be have the same number of rows as matrix A')
+            raise DtSystemError('matrix B must be have the same number of rows as matrix A')
             
         if not self.C.shape[1] == self.A.shape[0]:
-            raise LTISystemError('matrix c must be have the same number of columns as matrix A')
+            raise DtSystemError('matrix D must be have the same number of columns as matrix A')
             
         if not self.D.shape[0] == self.C.shape[0]:
-            raise LTISystemError('matrix d must be have the same number of rows as matrix C')
+            raise DtSystemError('matrix D must be have the same number of rows as matrix C')
 
         # call parent __init__
         DtSystem.__init__( self, n_outputs = self.C.shape[0],
@@ -469,48 +469,10 @@ class NoisyDtLTISystem( DtLTISystem ):
         self.x = self.A * self.x + self.B * u + self._process_noise()
 
 
-class KalmanFilter( object ):
-    def __init__ ( self, system, x0=None ):
-        
-        # set attribute
-        self.system = system
-        
-        # set initial condition for state estimate
-        if x0 is None:
-            self._xhat = system.x + np.matrix( np.random.multivariate_normal( np.zeros((system.n_states,)), system.Sw, 1 ).reshape(system.n_states,1) )
-        else:
-            self._xhat = x0
-        
-        # covariance matrix of the state estimate
-        self.P = self.system.Sw
-        
-    def estimate( self, y, u_old ):
-        
-        #simulate system with state estimate at previous step
-        xhat = self.system.A * self._xhat + self.system.B * u_old
-        
-        # form the innovation vector
-        inn = y - self.system.C*xhat
-        
-        # compute the covariance of the innovation
-        s = self.system.C*self.P*self.system.C.T + self.system.Sv
-        
-        # form the kalman gain matrix
-        K = self.system.A*self.P*self.system.C.T * np.linalg.inv(s)
-        
-        # update state estimate
-        xhat += K*inn
-        
-        # compute covariance of the estimation error
-        self.P = self.system.A*self.P*self.system.A.T -  \
-                 self.system.A*self.P*self.system.C.T*np.linalg.inv(s)*\
-                 self.system.C*self.P*self.system.A.T + self.system.Sw
-        
-        # update state estimate for next iteration
-        self._xhat = xhat
-        
-        # return state estimate
-        return xhat
+class DtSystemError( Exception ):
+    """Base exception raised when state-space matrices of non
+    coherent shape are given"""
+    pass
 
 
 def c2d( system, Ts ):
@@ -530,10 +492,3 @@ def _series( A, Ts, n=10):
     for i in xrange(1,n):
         S +=  (Am**i) * Ts**(i+1) / scipy.factorial(i+1)
     return S
-
-
-class DtSystemError( Exception ):
-    """Base exception raised when state-space matrices of non
-    coherent shape are given"""
-    pass
-
