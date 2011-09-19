@@ -12,19 +12,17 @@ from mpc.systems import KalmanFilter
 
 class SimEnv( object ):
     """A simulation environment for discrete-time dynamic systems."""
-    def __init__ ( self, system, controller=None, use_state_observer=True ):
-        
+    def __init__ ( self, system, controller=None, observer=True ):
+        """
+        """
         # the system we want to simulate
         self.system = system
         
         # the controller ( state feedback )
         self.controller = controller
-        
-        # use kalman filter?
-        self._use_state_observer = use_state_observer
-        
-        if self._use_state_observer:
-            self.kalman_filter = KalmanFilter( system, x0=system.x  )
+
+        # the state observer
+        self.observer = observer
     
     def simulate( self, Tsim, u_func=None ):
         """Simulate controlled system dynamics."""
@@ -63,7 +61,7 @@ class SimEnv( object ):
             # estimate state using kalman filter using output at current 
             # step and previous control input value
             if self._use_state_observer:
-                xhat[:,k+1] = self.kalman_filter.estimate( y[:,k], u[:,k] ).ravel()
+                xhat[:,k+1] = self.observer.get_state_estimate( y[:,k], u[:,k] ).ravel()
             else:
                 xhat[:,k+1] = self.system.x.ravel()
                 
