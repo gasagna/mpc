@@ -116,7 +116,7 @@ class LQController( Controller ):
         Rl = np.matrix( R )
         
         # solve Algebraic Riccati Equation
-        P = dare.DareSolver( system.A, system.B, Ql, Rl ).solve_slycot()
+        P = dare.DareSolver( system.A, system.B, Ql, Rl ).solve_direct()
         
         # create static state feedback matrix
         self.K  = (Rl + system.B.T * P * system.B).I * (system.B.T * P * system.A)
