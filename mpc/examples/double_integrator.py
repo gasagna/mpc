@@ -37,7 +37,7 @@ if __name__ == '__main__':
     # create simulator
     sim = SimEnv( di, controller, observer=kalman_observer )
     
-    # run
+    # run simulation
     res = sim.simulate( 10 )
         
     # plot results
@@ -54,6 +54,4 @@ if __name__ == '__main__':
     plot ( res.t, res.u[0] )
     grid()
     
-    print 1
     show()
-    print 2
