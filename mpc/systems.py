@@ -164,6 +164,88 @@ class DtSystem( object ):
         raise NotImplementedError('Use derived classes instead')
 
 
+class DtNLSystem( DtSystem ):
+    def __init__ ( self, f, g, n_states, n_inputs, n_outputs, Ts, x0):
+        """A class for non-linear time-invariant discrete-time systems.
+    
+        Such system are decribed by the following state equation:
+        
+        ..math::
+        
+            \\mathbf{x}(k+1) = \\mathbf{f}(\\mathbf{x(k)}, \\mathbf{u(k)} )
+        
+        and by the output equation:
+        
+        ..math::
+        
+            \\mathbf{y}(k) = \\mathbf{g}(\\mathbf{x(k)}, \\mathbf{u(k)} )
+    
+        Parameters
+        ----------
+        f : any python callable
+            the :math:`\\mathbf{f}` function in the state equation.       
+            This function must accept two arguments and must return 
+            a single argument. Arguments must be :py:`numpyp.matrix` 
+            objects with appropriate shapes. First argument is the state
+            vector :math:`\\mathbf{x}` at time step :math:`k`, 
+            second argument is the input vector :math:`\\mathbf{u}`
+            at time step :math:`k`.
+            
+        g : any python callable
+            the :math:`\\mathbf{g}` function in the output equation.       
+            This function must accept two arguments and must return 
+            a single argument. Arguments must be :py:`numpyp.matrix` 
+            objects with appropriate shapes. First argument is the state
+            vector :math:`\\mathbf{x}` at time step :math:`k`, 
+            second argument is the input vector :math:`\\mathbf{u}`
+            at time step :math:`k`.
+            
+        n_states : int 
+            the number of states of the system
+        
+        n_inputs : int
+            the number of inputs
+            
+        n_outputs : int
+            the number of outputs
+            
+        Ts : float
+            the sampling time
+        
+        x0 : np.matrix, with shape ``(n_states, 1)
+            the initial system state
+            
+        Attributes
+        ----------
+        x : np.matrix object with shape ``(n_states, 1)``
+            the state of the system at time step :math:`k`
+        n_states : int
+            the length of the state column vector :math:`\\mathbf{x}(k)`
+        n_inputs : int
+            the number of system inputs, i.e., the length of the column 
+            vector :math:`\\mathbf{u}(k)`
+        n_outputs : int
+            the number of system outputs, i.e., the length of the column 
+            vector :math:`\\mathbf{y}(k)`    
+        Ts : float
+            the sampling interval
+            
+        f : python callable
+            the system update equation function
+            
+        g : python callable
+            the output equation function
+            
+        """
+        # state equation function
+        self.f = f
+        
+        # outputs equation function
+        self.g = g
+        
+        DtSystem.__init__ ( self, Ts, x0 )
+
+
 class DtLTISystem( DtSystem ):
     def __init__ ( self, A, B, C, D, Ts, x0 ):
         """A class for linear time-invariant discrete time systems.
