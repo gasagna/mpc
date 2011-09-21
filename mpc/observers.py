@@ -1,5 +1,5 @@
 __author__ = 'Davide Lasagna, Politecnico di Torino Dipartimento di Ingegneria Aerospaziale. <davide.lasagna@polito.it>'
-__date__ = '20/09/2011'
+__date__ = '26/07/2011'
 __licence_ = """
 Copyright (C) 2011  Davide Lasagna
 
@@ -17,6 +17,20 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+__doc__ = """This module contains classes which implement algorithms 
+used to estimate the state of the system, when this information is
+not completely available.
+
+Summary of classes
+==================
+.. currentmodule:: mpc.observers
+
+.. autosummary::
+   :toctree: generated
+    mpc.observers.KalmanStateObserver
+    
+"""
+
 import numpy as np
 
 class KalmanStateObserver( object ):
@@ -29,6 +43,9 @@ class KalmanStateObserver( object ):
         self._D = system.D
         self._Sw = system.Sw
         self._Sv = system.Sv
+        self._n_states = system.n_states
+        self._n_inputs = system.n_inputs
+        self._n_outputs = system.n_outputs
         
         # set initial condition for state estimate
         if x0 is None:
@@ -36,7 +53,7 @@ class KalmanStateObserver( object ):
         else:
             # check initial condition
             x0 = np.asmatrix( x0 )
-            if not x0.shape == ( self.n_states, 1 ):
+            if not x0.shape == ( self._n_states, 1 ):
                 raise DtSystemError('wrong shape of initial state vector')
             self._xhat = x0
         
@@ -44,6 +61,10 @@ class KalmanStateObserver( object ):
         self.P = self._Sw
         
     def get_state_estimate( self, y, u ):
+        """Get estimate of the systems state.
+        
+        """
+        y = np.asmatrix(y).reshape(self._n_outputs, 1)
         
         #simulate system with state estimate at previous step
         self.xhat = self._A * self._xhat + self._B * u

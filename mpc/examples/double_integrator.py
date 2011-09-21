@@ -1,7 +1,9 @@
 import numpy as np
+from pylab import *
 
 from mpc.controllers import LQController
 from mpc.systems import NoisyDtLTISystem
+from mpc.observers import KalmanStateObserver
 from mpc.simulation import SimEnv
 
         
@@ -36,12 +38,9 @@ if __name__ == '__main__':
     sim = SimEnv( di, controller, observer=kalman_observer )
     
     # run
-    res = sim.simulate( 15 )
-    print res.t.shape
+    res = sim.simulate( 10 )
         
     # plot results
-    from pylab import *
-    
     subplot(311)
     plot ( res.t, res.x[0], '-' )
     plot ( res.t, res.y[0], '--' )
@@ -55,5 +54,6 @@ if __name__ == '__main__':
     plot ( res.t, res.u[0] )
     grid()
     
-    
+    print 1
     show()
+    print 2

@@ -37,9 +37,8 @@ Summary of classes
 
     mpc.controllers.Controller
     mpc.controllers.LQController
-    mpc.controllers.MPCController
-
 """
+
 import numpy as np
 from scipy.linalg import block_diag
 import pydare as dare
@@ -144,117 +143,3 @@ class LQController( Controller ):
         """
         
         return - np.dot( self.K, x)
-
-
-class MPController( Controller ):
-    """The following linear, discrete-time. time invariant model is used:
-    
-    ..math::
-    
-        x(k+1) = A x(k) + B u(k)
-        y(k) = C x(k)
-        
-    we want to design a predictive controller in order to obtain the 
-    system state regulation to the oigin in the presence of:
-    
-    * input saturation constraints,
-    * linear state constarints.
-    
-    For the control problem considered it can be shown that the MPC 
-    controller is obtained by solving a Quadratic Programme (QP) problem
-    at each sampling time. 
-    
-    The control objectives can be taken into account through the 
-    following cost function.
-    
-    
-    Consider the following quadratic cost function:
-    
-    ..math:: 
-        J(x(k|k), U(k)) = \sum_{i=0}^{H_p-1} ||x(k+1|k)||^{2}_Q + ||u(k+1|K)||^{2}_R
-        
-    with:
-    
-    ..math::
-        U(k) = [u(k|k) u(k+1|k) ... u(k+Hc-1|k)]^T
-        
-    and 
-    ..math::
-        H_p=H_c; \, Q=Q^T>=0; \, R=R^T>=0
-        
-    """
-    def __init__ ( self, system, Q, R, Hp, Hw, Hc ):
-        """Design a model predictive controller.
-        
-        Parameters
-        ----------
-        system : an instance of :py:`mpc.systems.DtLTISystem`, or one of its
-                derived classes. This is the linear system which has 
-                to be controlled.
-                
-        Q : np.matrix
-            the state weigthing matrix. Must be positive definite
-            and with shape ``(n_states, n_states)``.
-            
-        R : np.matrix
-            the input weigthing matrix. Must be positive definite.
-            and with shape ``(n_inputs, n_inputs)``.
-        
-        Hp : int
-            the prediction horizon 
-        
-        Hw : int
-            the first sample to be inlcuded in the horizon for the 
-            optimization process
-            
-        Hc : int
-            the control horizon
-            
-        Attributes
-        ----------
-        K : np.matrix 
-            the state feedback gain matrix
-            
-        Methods
-        -------
-        compute_control_input( x ) : compute optimal control move
-
-        """
-
-        Ac = np.vstack( [system.A**i for i in range(Hp)] ) 
-
-        rows = []
-        for i in range(Hp):
-            row = np.hstack( [ (system.A**(i-j-1) )*system.B if j<i else np.zeros_like(system.B) for j in range(Hc)]  )
-            rows.append(row)
-            
-        Bc = np.vstack(rows)
-
-        Qc = block_diag( *(np.zeros_like(Q) if i<Hw else Q for i in range(Hp) ) )
-        Rc = block_diag( *(R for i in range(Hc)) )
-
-        H = 2*( Bc.T*Qc*Bc + Rc )
-        F = 2*Ac.T*Qc*Bc
-
-        self.K = (np.linalg.inv(H) * F.T)[:system.n_inputs]
-
-    def compute_control_input( self, x ):
-        """Conpute control move based on system's state.
-        
-        Parameters
-        ----------
-        x : np.matrix object with shape ``(n_states, 1)``
-            the system's state
-            
-        Returns
-        -------
-        u : np.matrix object with shape ``(n_inputs, 1)``
-            the optimal control move based on controller design
-            
-        Notes
-        -----
-        This method returns only the first element of the optimal input
-        sequence which results from the optimization process, thus 
-        enforcing the receding horizon principle.
-        """    
-        return - np.dot( self.K,  x)
