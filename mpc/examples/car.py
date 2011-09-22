@@ -4,6 +4,12 @@ position of the car with a very noisy GPS, which we do not actually
 trust much. So we have implemented a Kalman filter to estimate the 
 position of our car. By the way, a state observer is also implemented 
 via the Klaman filtering and we get the estimate of the car's velocity too.
+
+In this example:
+
++ use kalman state observer, to estimate car's position and velocity.
++ subclass Controller class so that we can mimick the car's throttle.
+
 """
 
 import numpy as np
@@ -74,7 +80,7 @@ class Throttle( Controller ):
 if __name__ == '__main__':
     
     # sampling time. 
-    Ts = 0.04
+    Ts = 0.05
     
     # Process and measurement noise covariance matrices
     # this value should be the variance of the measurement position error.
@@ -87,15 +93,16 @@ if __name__ == '__main__':
     # we do not get the expected accelleration, because of the fact the 
     # our car is running in an environment with gusts, holes on the road, 
     # ..., which introduce a random variation in the car's accelleration.
-    Sw = 1e-2 * np.matrix( [[0.25*Ts**4, 0.5*Ts**3],[0.5*Ts**3, Ts**2]] )
+    Sw = 1e1 * np.matrix( [[0.25*Ts**4, 0.5*Ts**3],[0.5*Ts**3, Ts**2]] )
     
     # Ok, now define the system, giving zero initial conditions.
     car = Car( Ts=Ts, Sw=Sw, Sv=Sv, x0 = np.matrix( [[0.0],[0.0]] ) )
     
     # define controller. We want a constant value of input. Remember to 
     # put a value for the accelleration in m/s^2, and not g!
-    throttle = Throttle( value=9.81*0.2 ) 
+    throttle = Throttle( value=9.81*1 ) 
     
+    # create kalman state observer object
     kalman_observer = KalmanStateObserver( car )
     
     # Create simulator.
