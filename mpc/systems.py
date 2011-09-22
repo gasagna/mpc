@@ -445,9 +445,13 @@ class NoisyDtLTISystem( DtLTISystem ):
 
 class DtSystemError( Exception ):
     """Base exception raised when state-space matrices of non
-    coherent shape are given"""
+    coherent shape are given."""
     pass
 
+class ObservabilityError( Exception ):
+    """Exception raised when trying to get
+    state from measurements"""
+    pass
 
 def c2d( system, Ts ):
     """Convert continuous-time model to discrete time, 
