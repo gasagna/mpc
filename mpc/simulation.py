@@ -32,6 +32,8 @@ Summary of classes
 
 import numpy as np
 
+from mpc.systems import ObservabilityError
+
 
 class SimEnv( object ):
     def __init__ ( self, system, controller=None, observer=None ):
@@ -64,7 +66,7 @@ class SimEnv( object ):
 
         # the state observer
         self.observer = observer
-    
+        
     def simulate( self, Tsim ):
         """Simulate controlled system dynamics.
         
@@ -93,31 +95,38 @@ class SimEnv( object ):
         # measurements
         y = np.zeros( (self.system.n_outputs, n_steps) )
         
+        
         if self.observer:
+            # if we have an observer estimate system's state
             xhat[:,0] = self.observer.get_state_estimate( 
                 self.system.measure_outputs().ravel(), u[:,0]  ).ravel()
         else:
-            xhat[:,0] = self.system.x.ravel()
+            # try to compute measurements, but only if the system is observable.
+            try:
+                xhat[:,0] = np.linalg.inv(self.system.C) * self.system.measure_outputs()
+            except np.linalg.LinAlgError:
+                raise ObservabilityError( "System is not observable. Cannot compute system's state." )
+                
         
         # run simulation
         for k in xrange( n_steps-1 ):
-            
-            # get measuremts
-            y[:,k] = self.system.measure_outputs().ravel()
-            
+                        
             # compute control move based on the state at this time. 
             u[:,k] = self.controller.compute_control_input( xhat[:,k].reshape(self.system.n_states,1) )
             
             # apply input 
             self.system._apply_input( u[:,k].reshape(self.system.n_inputs, 1) )
             
+            # get measuremts
+            y[:,k+1] = self.system.measure_outputs().ravel()
+            
             # now we are at step step k+1
             # estimate state using observer based on output at current 
             # step and previous control input value
             if self.observer:
-                xhat[:,k+1] = self.observer.get_state_estimate( y[:,k], u[:,k] ).ravel()
+                xhat[:,k+1] = self.observer.get_state_estimate( y[:,k+1], u[:,k] ).ravel()
             else:
-                xhat[:,k+1] = self.system.x.ravel()
+                xhat[:,k+1] = np.linalg.inv(self.system.C) * self.system.measure_outputs()
                 
         return SimulationResults(xhat, u, y, self.system.Ts)
 
