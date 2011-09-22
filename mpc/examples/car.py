@@ -1,17 +1,16 @@
 """This example shows how to simulate the dynamics of a car which is 
-accellerated at constant rate on a straigth. We are measuring the
+accelerated at constant rate on a straigth. We are measuring the
 position of the car with a very noisy GPS, which we do not actually 
 trust much. So we have implemented a Kalman filter to estimate the 
 position of our car. By the way, a state observer is also implemented 
 via the Klaman filtering and we get the estimate of the car's velocity too.
-
-Read through the file to understand what we are actually doing.
 """
 
 import numpy as np
 
 from mpc.controllers import Controller
 from mpc.systems import NoisyDtLTISystem
+from mpc.observers import KalmanStateObserver
 from mpc.simulation import SimEnv
 
 
@@ -45,8 +44,8 @@ class Car( NoisyDtLTISystem ):
         # did not do any mistake in the discretization!
         A = [[1, Ts], [0, 1]]
         B = [[Ts**2/2], [Ts]]
-        C = [[1, 0]]
-        D = [[0]]
+        C = [[1.0, 0.0]]
+        D = [[0.0]]
         
         # we call the parent class __init__ method.
         NoisyDtLTISystem.__init__( self, A, B, C, D, Ts, Sw, Sv, x0 )
@@ -75,52 +74,58 @@ class Throttle( Controller ):
 if __name__ == '__main__':
     
     # sampling time. 
-    Ts = 0.01
+    Ts = 0.04
     
     # Process and measurement noise covariance matrices
     # this value should be the variance of the measurement position error.
     # Our GPS is quite crappy so i have set a Root Mean Square Error of 
     # 10 meters
-    Sv = np.matrix( [[10**2]] )
+    Sv = np.matrix( [[10.0**2]] )
     
     # This is a little bit less intuitive to get.
     # It accounts for the fact that even if we press the pedal to full,
     # we do not get the expected accelleration, because of the fact the 
     # our car is running in an environment with gusts, holes on the road, 
     # ..., which introduce a random variation in the car's accelleration.
-    Sw = 0.1 * np.matrix( [[0.25*Ts**4, 0.5*Ts**3],[0.5*Ts**3, Ts**2]] )
+    Sw = 1e-2 * np.matrix( [[0.25*Ts**4, 0.5*Ts**3],[0.5*Ts**3, Ts**2]] )
     
     # Ok, now define the system, giving zero initial conditions.
-    car = Car( Ts=Ts, Sw=Sw, Sv=Sv, x0 = np.array( [[0.0],[0.0]] ) )
+    car = Car( Ts=Ts, Sw=Sw, Sv=Sv, x0 = np.matrix( [[0.0],[0.0]] ) )
     
     # define controller. We want a constant value of input. Remember to 
     # put a value for the accelleration in m/s^2, and not g!
     throttle = Throttle( value=9.81*0.2 ) 
     
+    kalman_observer = KalmanStateObserver( car )
+    
     # Create simulator.
     # This is our simulation obejct; it is responsible of making all 
     # the parts communicating togheter.
-    sim = SimEnv( car, throttle )
+    sim = SimEnv( car, throttle, kalman_observer )
         
     # run simulation for 10 seconds
     res = sim.simulate( 10 )
-    
         
     # now do plots
     from pylab import *
     
-    subplot(211)
+    subplot(311)
     plot ( res.t, res.y[0], 'b.', label='Position measured' )
     plot ( res.t, res.x[0], 'r-', lw=2, label='Position estimated' )
     legend(loc=2, numpoints=1)
-    xlabel( 't [s]' )
     ylabel( 'x [m]' )
     grid()
     
-    subplot(212, sharex=gca())
+    subplot(312, sharex=gca())
     plot ( res.t, res.x[1], 'r-', label='Velocity estimated' )
-    xlabel( 't [s]' )
     ylabel( 'v [m/s]' )
+    legend(loc=2, numpoints=1)
+    grid()
+    
+    subplot(313, sharex=gca())
+    plot ( res.t, res.u[0], 'b-', label='Input' )
+    xlabel( 't [s]' )
+    ylabel( 'u' )
     legend(loc=2, numpoints=1)
     grid()
     
