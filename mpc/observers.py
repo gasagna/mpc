@@ -49,28 +49,26 @@ class KalmanStateObserver( object ):
         
         # set initial condition for state estimate
         if x0 is None:
-            self.xhat = system.x + np.matrix( np.random.multivariate_normal( np.zeros((system.n_states,)), system.Sw, 1 ).reshape(system.n_states,1) )
+            self._xhat = system.x + np.matrix( np.random.multivariate_normal( np.zeros((system.n_states,)), system.Sw, 1 ).reshape(system.n_states,1) )
         else:
             # check initial condition
-            x0 = np.asmatrix( x0 )
-            if not x0.shape == ( self._n_states, 1 ):
+            x0_ = np.matrix( x0 )
+            if not x0_.shape == ( self._n_states, 1 ):
                 raise DtSystemError('wrong shape of initial state vector')
-            self._xhat = x0
+            self._xhat = x0_
         
         # covariance matrix of the state estimate
-        self.P = self._Sw
+        self.P = self._Sw.copy()
         
     def get_state_estimate( self, y, u ):
-        """Get estimate of the systems state.
-        
-        """
+        """Get estimate of the systems state."""
         y = np.asmatrix(y).reshape(self._n_outputs, 1)
         
         #simulate system with state estimate at previous step
-        self.xhat = self._A * self._xhat + self._B * u
+        self._xhat = self._A * self._xhat + self._B * u
         
         # form the innovation vector
-        inn = y - self._C*self.xhat
+        inn = y - self._C*self._xhat
         
         # compute the covariance of the innovation
         s = self._C*self.P*self._C.T + self._Sv
@@ -79,7 +77,7 @@ class KalmanStateObserver( object ):
         K = self._A*self.P*self._C.T * np.linalg.inv(s)
         
         # update state estimate
-        self.xhat += K*inn
+        self._xhat += K*inn
         
         # compute covariance of the estimation error
         self.P = self._A*self.P*self._A.T -  \
@@ -87,4 +85,4 @@ class KalmanStateObserver( object ):
                  self._C*self.P*self._A.T + self._Sw
         
         # return state estimate
-        return self.xhat
+        return self._xhat
