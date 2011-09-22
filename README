@@ -1,9 +1,12 @@
 General information
 ===================
-mpc is a pure Python module for the simulation of discrete-time linear time-invariant dynamic systems which can be controlled by a model predictive controller (MPC) or an infinite horizon linear-quadratic controller (LQ). Simulation of non-linear system can also be preformed.
+mpc is a pure Python module for the simulation of discrete-time linear time-invariant dynamic systems which can be controlled by a model predictive controller (MPC) or an infinite horizon linear-quadratic controller (LQ). Simulation of non-linear system can also be performed. 
 
-The project was started from code initially written "to scratch an itch", obviously withouth the aim of being a valid alternative to available control software (Matlab).
-Infact, mpc was primarily created to be a research tool and can be used in reserach and teaching. So, don't expect too much!
+The project was started from code initially written "to scratch an itch", obviously withouth the aim of being a valid alternative to available control software (Matlab). Infact, mpc was primarily created to be a research tool and can be used in reserach and teaching. So, don't expect too much!
+
+NOTICE
+======
+A model predictive controller is not yet available as this is alpha software. However, some nice things can be done.
 
 Installation and requirements
 =============================
