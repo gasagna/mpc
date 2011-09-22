@@ -3,4 +3,6 @@
 + Add neural-network controller.
 
 + Add system identification tools, like autoregressive exogenus models. e.g. (order = 1): x(k+1) = a*x(k) + b*u(k). So that i can create a linear model from experimental input-output data or make a simulation from a non-linear model.
+
++ Add simulation progress indicator.
     
