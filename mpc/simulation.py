@@ -93,6 +93,12 @@ class SimEnv( object ):
         # measurements
         y = np.zeros( (self.system.n_outputs, n_steps) )
         
+        if self.observer:
+            xhat[:,0] = self.observer.get_state_estimate( 
+                self.system.measure_outputs().ravel(), u[:,0]  ).ravel()
+        else:
+            xhat[:,0] = self.system.x.ravel()
+        
         # run simulation
         for k in xrange( n_steps-1 ):
             
