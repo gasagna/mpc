@@ -1,57 +1,69 @@
+"""This example shows the following things:
+
++ How to subclass the DtLTISystem class to create
+  a double integrator system;
++ How to set up an infinite horizon Linear-Quadratic controller;
++ How to simulate the behaviour of the system.
++ How to use the mpc.simulation.SimulationResults 
+  class to plot the results of the simulation.
+"""
+
 import numpy as np
 from pylab import *
 
+from mpc.systems import DtLTISystem
 from mpc.controllers import LQController
-from mpc.systems import NoisyDtLTISystem
-from mpc.observers import KalmanStateObserver
 from mpc.simulation import SimEnv
 
         
-class DoubleIntegrator( NoisyDtLTISystem ):
-    def __init__ ( self, Ts, Sw, Sv, x0 ):
+class DoubleIntegrator( DtLTISystem ):
+    def __init__ ( self, Ts, x0 ):
         
-        # state space matrices
+        # state space matrices of the double integrator
         A = [[1, Ts], [0, 1]]
         B = [[Ts**2/2], [Ts]]
+        
+        # the state is fully observable
         C = [[1, 0], [0, 1]]
         D = [[0], [0]]
         
-        NoisyDtLTISystem.__init__( self, A, B, C, D, Ts, Sw, Sv, x0 )
+        DtLTISystem.__init__( self, A, B, C, D, Ts, x0 )
         
 if __name__ == '__main__':
     
-    Ts = 1.0 / 400
+    # this is the sampling time
+    Ts = 1.0 / 40
     
-    Sv = np.matrix( [[1, 0], [0, 1]] )
-    Sw = 1 * np.matrix( [[0.25*Ts**4, 0.5*Ts**3],[0.5*Ts**3, Ts**2]] )
+    # initial condition
+    x0 = np.matrix( [[-6.0],[0.0]] )
     
     # define system
-    di = DoubleIntegrator( Ts=Ts, Sw=Sw, Sv=Sv, x0 = np.matrix( [[10.0],[5.0]] ) )
+    di = DoubleIntegrator( Ts=Ts, x0=x0 )
     
     # define controller
-    controller = LQController( di, Q=10*np.eye(2), R=1*np.eye(1)) 
+    controller = LQController( di, Q=1*np.eye(2), R=0.1*np.eye(1) ) 
     
-    # create kalman state observer
-    kalman_observer = KalmanStateObserver( di, x0=np.matrix([[10.0],[5.0]]) )
-        
     # create simulator
-    sim = SimEnv( di, controller, observer=kalman_observer )
+    sim = SimEnv( di, controller )
     
     # run simulation
-    res = sim.simulate( 10 )
+    res = sim.simulate( 6 )
         
     # plot results
     subplot(311)
     plot ( res.t, res.x[0], '-' )
-    plot ( res.t, res.y[0], '--' )
+    ylabel('x [m]')
     grid()
     
     subplot(312, sharex=gca())
     plot ( res.t, res.x[1] )
+    ylabel('v [m/s]')
     grid()
     
     subplot(313, sharex=gca())
     plot ( res.t, res.u[0] )
+    xlabel('t [s]')
+    ylabel('u')
     grid()
     
     show()
