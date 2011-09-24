@@ -103,7 +103,7 @@ class SimEnv( object ):
         else:
             # try to compute measurements, but only if the system is observable.
             try:
-                xhat[:,0] = np.linalg.inv(self.system.C) * self.system.measure_outputs()
+                xhat[:,0] = (np.linalg.inv(self.system.C) * self.system.measure_outputs()).reshape(n_states,1)
             except np.linalg.LinAlgError:
                 raise ObservabilityError( "System is not observable. Cannot compute system's state." )
                 
