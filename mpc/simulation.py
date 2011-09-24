@@ -103,7 +103,7 @@ class SimEnv( object ):
         else:
             # try to compute measurements, but only if the system is observable.
             try:
-                xhat[:,0] = (np.linalg.inv(self.system.C) * self.system.measure_outputs()).reshape(n_states,1)
+                xhat[:,0] = (np.linalg.inv(self.system.C) * self.system.measure_outputs()).ravel()
             except np.linalg.LinAlgError:
                 raise ObservabilityError( "System is not observable. Cannot compute system's state." )
                 
@@ -126,7 +126,7 @@ class SimEnv( object ):
             if self.observer:
                 xhat[:,k+1] = self.observer.get_state_estimate( y[:,k+1], u[:,k] ).ravel()
             else:
-                xhat[:,k+1] = np.linalg.inv(self.system.C) * self.system.measure_outputs()
+                xhat[:,k+1] = (np.linalg.inv(self.system.C) * self.system.measure_outputs() ).ravel()
                 
         return SimulationResults(xhat, u, y, self.system.Ts)
 
