@@ -6,7 +6,7 @@
 + subclass mpc.controllers.Controller to enforce 
   saturation of the input.
   
-We want ot zero regulate the system.
+We want to zero regulate the system.
 """
 
 import numpy as np

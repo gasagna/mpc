@@ -2,7 +2,8 @@
 
 + How to subclass the DtLTISystem class to create
   a double integrator system;
-+ How to set up an infinite horizon Linear-Quadratic controller;
++ How to set up an infinite horizon Linear-Quadratic controller 
+  to regulate to zero the system;
 + How to simulate the behaviour of the system.
 + How to use the mpc.simulation.SimulationResults 
   class to plot the results of the simulation.
