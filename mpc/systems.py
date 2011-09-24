@@ -19,29 +19,54 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 __doc__ = """This module contains classes used to describe discrete time systems.
 
-Summary of classes
+Classes
 ==================
 .. currentmodule:: mpc.systems
 
 .. autosummary::
    :toctree: generated
+    
     mpc.systems.DtSystem
-    mpc.systems.DtSystemError
+    mpc.systems.DtNLSystem
     mpc.systems.DtLTISystem
     mpc.systems.NoisyDtLTISystem
     mpc.systems.KalmanFilter
+    mpc.systems.DtSystemError
+    mpc.systems.ObservabilityError
+        
 
+.. autoclass:: mpc.systems.DtSystem
+    :members:
+    :inherited-members:
+    :show-inheritance:
+   
+.. autoclass:: mpc.systems.DtSystemError
+    :members: 
+    :inherited-members:
+    :show-inheritance:
     
-Summary of functions
+.. autoclass:: mpc.systems.DtLTISystem
+    :members: 
+    :inherited-members:
+    :show-inheritance:
+    
+.. autoclass:: mpc.systems.NoisyDtLTISystem
+    :members: 
+    :inherited-members:
+    :show-inheritance:
+    
+Exceptions
+==========
+.. currentmodule:: mpc.systems
+
+.. autoclass:: mpc.systems.DtSystemError
+.. autoclass:: mpc.systems.ObservabilityError
+    
+Functions
 ====================
 .. currentmodule:: mpc.systems
 
-.. autosummary::
-   :toctree: generated
-   
-    mpc.systems.c2d
-
-    
+.. autofunction:: mpc.systems.c2d
 
 """
 
@@ -53,7 +78,7 @@ import scipy.linalg
 class DtSystem( object ):
     def __init__ ( self, n_states, n_inputs, n_outputs, Ts, x0 ):
         """Base class of all the linear/non-linear discrete time systems of
-        :py:`pyhd the mpc.systems` module. Use derived classes to work, 
+        :py:module:`mpc.systems` module. Use derived classes to work, 
         because this one is just here for the general structure.
         
         Parameters
@@ -68,7 +93,7 @@ class DtSystem( object ):
             vector :math:`\\mathbf{y}(k)`    
         Ts : float
             the sampling interval
-        x0 : np.matrix, with shape ``(n_states, 1)
+        x0 : np.matrix, with shape ``(n_states, 1)``
             the initial system state
             
         Attributes
@@ -88,7 +113,7 @@ class DtSystem( object ):
             
         Raises
         ------
-        :py:`mpc.systems.DtSystemError`
+        :py:class:`mpc.systems.DtSystemError`
             if ``x0.shape != (n_states, 1)``
         """
         # number of states
@@ -115,7 +140,7 @@ class DtSystem( object ):
         
         Parameters
         ----------
-        u : np.matrix object
+        u : np.array object
             the argument ``u`` can be a a single input or a sequence of inputs.
             In the first case ``u`` must have shape equal to ``(n_inputs, 1)``, 
             while in the former it can have a shape equal to ``(n_inputs, n_steps)``,
@@ -123,7 +148,7 @@ class DtSystem( object ):
         
         Returns
         -------
-        y : np.matrix object
+        y : np.array object
             the outputs of the system at each time step of the simulation.
             This matrix has shape ``(n_outputs, n_steps)``, where ``n_steps``
             is the number of columns of the input argument ``u``.
@@ -131,9 +156,11 @@ class DtSystem( object ):
             the first element of ``u`` has been applied.
             
         """
+        # set data to proper shape
+        u = np.asmatrix(u)
         
         # initialize outputs array. Each column is the output at time k.
-        y = np.zeros( (self.n_outputs, u.shape[1] ) )
+        y = np.matrix( np.zeros( (self.n_outputs, u.shape[1] ) ) )
         
         # for each time step 
         for i in range(u.shape[1]):
@@ -141,9 +168,9 @@ class DtSystem( object ):
             y[:,i] = self.measure_outputs()
                     
             # compute new state vector
-            self.x = self._apply_input( u[:,i] )
+            self._apply_input( u[:,i] )
             
-        return y
+        return np.array( y )
         
     def measure_outputs( self ):
         """Get outputs, computed from system state.
@@ -304,7 +331,7 @@ class DtLTISystem( DtSystem ):
             
         Raises
         ------
-        LTISystemError : if system matrices do not have the correct shape
+        :py:class:`mpc.systems.DtSystemError : if system matrices do not have the correct shape
         
         
         """
@@ -443,6 +470,20 @@ class NoisyDtLTISystem( DtLTISystem ):
         self.x = self.A * self.x + self.B * u + self._process_noise()
 
 
+class DoubleIntegrator( DtLTISystem ):
+    def __init__ ( self, Ts, x0 ):
+        
+        # state space matrices of the double integrator
+        A = [[1, Ts], [0, 1]]
+        B = [[Ts**2/2], [Ts]]
+            
+        # the state is fully observable
+        C = [[1, 0], [0, 1]]
+        D = [[0], [0]]
+        
+        DtLTISystem.__init__( self, A, B, C, D, Ts, x0 )
+
+
 class DtSystemError( Exception ):
     """Base exception raised when state-space matrices of non
     coherent shape are given."""
@@ -450,7 +491,7 @@ class DtSystemError( Exception ):
 
 class ObservabilityError( Exception ):
     """Exception raised when trying to get
-    state from measurements"""
+    state from measurements of a no observable system."""
     pass
 
 def c2d( system, Ts ):
