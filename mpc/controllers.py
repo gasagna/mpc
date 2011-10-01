@@ -25,7 +25,7 @@ A controller is a python object which usually has a single public method,
 ``compute_control_input``, which is responsible of returning the 
 appropriate control input, based on the system's state, which is
 given as argument to the method. For consistency all controllers
-inherits for the base class :py:module:`mpc.controllers.Controller` and you do
+inherits for the base class :py:mod:`mpc.controllers.Controller` and you do
 it as well if you want to create your own controller class.
 
 Classes
@@ -56,7 +56,7 @@ import pydare as dare
 class Controller( object ):
     """Base, dummy controller class. Use derived classes."""
     def compute_control_input( self ):
-        """Compute control input. This is aplaceholder method: use derived classes."""
+        """Compute control input. This is a placeholder method: use derived classes."""
         raise NotImplemented( 'Call derived classes instead.')
 
 
@@ -98,22 +98,22 @@ class LQController( Controller ):
             
         Parameters
         ----------
-        system : an instance of :py:`mpc.systems.DtLTISystem`, or one of its
+        system : an instance of :py:class:`mpc.systems.DtLTISystem`, or one of its
                 derived classes. This is the linear system which has 
                 to be controlled.
                 
-        Q : np.matrix
+        Q : numpy.matrix
             the state weigthing matrix. Must be positive definite
             and with shape ``(n_states, n_states)``.
             
-        R : np.matrix
+        R : numpy.matrix
             the input weigthing matrix. Must be positive definite.
             and with shape ``(n_inputs, n_inputs)``.
             
         
         Attributes
         ----------
-        K : np.matrix 
+        K : numpy.matrix 
             the state feedback gain matrix
         """
         # make two local variables
@@ -131,20 +131,21 @@ class LQController( Controller ):
         
         Parameters
         ----------
-        x : np.matrix, shape = ``(n_states, 1)``.
+        x : numpy.matrix, shape = ``(n_states, 1)``.
             the state column vector.
         
         Returns
         -------
-        u : np.matrix, shape = ``(n_inputs, 1)``.
+        u : numpy.matrix, shape = ``(n_inputs, 1)``.
             an input vector which is fed back to the system.
             
         Notes
         -----
         The control move is computed as:
         
-        ..math::
-         u = - K x
+        .. math::
+            
+            u = - K x
         
         """
         
