@@ -489,10 +489,12 @@ class DtSystemError( Exception ):
     coherent shape are given."""
     pass
 
+
 class ObservabilityError( Exception ):
     """Exception raised when trying to get
     state from measurements of a no observable system."""
     pass
+
 
 def c2d( system, Ts ):
     """Convert continuous-time model to discrete time, 
