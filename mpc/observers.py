@@ -27,7 +27,8 @@ Summary of classes
 
 .. autosummary::
    :toctree: generated
-    mpc.observers.KalmanStateObserver
+   
+   mpc.observers.KalmanStateObserver
     
 """
 
@@ -35,8 +36,7 @@ import numpy as np
 
 class KalmanStateObserver( object ):
     def __init__ ( self, system, x0=None ):
-        
-        # set attribute
+        # set attributes
         self._A = system.A
         self._B = system.B
         self._C = system.C
