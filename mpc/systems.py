@@ -30,18 +30,10 @@ Classes
     mpc.systems.DtNLSystem
     mpc.systems.DtLTISystem
     mpc.systems.NoisyDtLTISystem
-    mpc.systems.KalmanFilter
-    mpc.systems.DtSystemError
-    mpc.systems.ObservabilityError
-        
+       
 
 .. autoclass:: mpc.systems.DtSystem
     :members:
-    :inherited-members:
-    :show-inheritance:
-   
-.. autoclass:: mpc.systems.DtSystemError
-    :members: 
     :inherited-members:
     :show-inheritance:
     
@@ -55,19 +47,19 @@ Classes
     :inherited-members:
     :show-inheritance:
     
+.. autoclass:: mpc.systems.DtNLSystem
+    :members:
+    :inherited-members:
+    :show-inheritance:
+    
 Exceptions
 ==========
-.. currentmodule:: mpc.systems
-
 .. autoclass:: mpc.systems.DtSystemError
 .. autoclass:: mpc.systems.ObservabilityError
     
 Functions
-====================
-.. currentmodule:: mpc.systems
-
+=========
 .. autofunction:: mpc.systems.c2d
-
 """
 
 import numpy as np
@@ -78,7 +70,7 @@ import scipy.linalg
 class DtSystem( object ):
     def __init__ ( self, n_states, n_inputs, n_outputs, Ts, x0 ):
         """Base class of all the linear/non-linear discrete time systems of
-        :py:module:`mpc.systems` module. Use derived classes to work, 
+        the :py:mod:`mpc.systems` module. Use derived classes to work, 
         because this one is just here for the general structure.
         
         Parameters
@@ -197,22 +189,22 @@ class DtNLSystem( DtSystem ):
     
         Such system are decribed by the following state equation:
         
-        ..math::
+        .. math::
         
-            \\mathbf{x}(k+1) = \\mathbf{f}(\\mathbf{x(k)}, \\mathbf{u(k)} )
+            \\mathbf{x}(k+1) = \\mathbf{f}(\\mathbf{x}(k), \\mathbf{u}(k) )
         
         and by the output equation:
         
-        ..math::
+        .. math::
         
-            \\mathbf{y}(k) = \\mathbf{g}(\\mathbf{x(k)}, \\mathbf{u(k)} )
+            \\mathbf{y}(k) = \\mathbf{g}(\\mathbf{x}(k), \\mathbf{u}(k) )
     
         Parameters
         ----------
         f : any python callable
             the :math:`\\mathbf{f}` function in the state equation.       
             This function must accept two arguments and must return 
-            a single argument. Arguments must be :py:`numpyp.matrix` 
+            a single argument. Arguments must be numpy.matrix
             objects with appropriate shapes. First argument is the state
             vector :math:`\\mathbf{x}` at time step :math:`k`, 
             second argument is the input vector :math:`\\mathbf{u}`
@@ -221,7 +213,7 @@ class DtNLSystem( DtSystem ):
         g : any python callable
             the :math:`\\mathbf{g}` function in the output equation.       
             This function must accept two arguments and must return 
-            a single argument. Arguments must be :py:`numpyp.matrix` 
+            a single argument. Arguments must be numpy.matrix
             objects with appropriate shapes. First argument is the state
             vector :math:`\\mathbf{x}` at time step :math:`k`, 
             second argument is the input vector :math:`\\mathbf{u}`
@@ -331,7 +323,7 @@ class DtLTISystem( DtSystem ):
             
         Raises
         ------
-        :py:class:`mpc.systems.DtSystemError : if system matrices do not have the correct shape
+        mpc.systems.DtSystemError : if system matrices do not have the correct shape
         
         
         """
@@ -442,7 +434,7 @@ class NoisyDtLTISystem( DtLTISystem ):
             
         Raises
         ------
-        LTISystemError : if system matrices do not have the correct shape
+        mpc.systems.DtSystemError : if system matrices do not have the correct shape
         """
         # set process and measurement noise covariance matrices
         self.Sw = Sw
